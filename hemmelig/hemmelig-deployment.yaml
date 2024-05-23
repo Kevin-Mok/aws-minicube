@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.32.0 (HEAD)
+  labels:
+    io.kompose.service: hemmelig
+  name: hemmelig
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: hemmelig
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.32.0 (HEAD)
+      labels:
+        io.kompose.network/hemmelig-default: "true"
+        io.kompose.service: hemmelig
+    spec:
+      containers:
+        - env:
+            - name: SECRET_FILE_SIZE
+              value: "4"
+            - name: SECRET_FORCED_LANGUAGE
+              value: en
+            - name: SECRET_HOST
+              value: '!changeme!'
+            - name: SECRET_JWT_SECRET
+              value: '!changeme!'
+            - name: SECRET_LOCAL_HOSTNAME
+              value: 0.0.0.0
+            - name: SECRET_MAX_TEXT_SIZE
+              value: "256"
+            - name: SECRET_PORT
+              value: "3000"
+            - name: SECRET_ROOT_EMAIL
+              value: groot@hemmelig.app
+            - name: SECRET_ROOT_PASSWORD
+              value: iamroot
+            - name: SECRET_ROOT_USER
+              value: groot
+          image: hemmeligapp/hemmelig:v5.19.17
+          livenessProbe:
+            exec:
+              command:
+                - wget -O /dev/null localhost:3000/api/healthz || exit 1
+            failureThreshold: 3
+            timeoutSeconds: 5
+          name: hemmelig
+          ports:
+            - containerPort: 3000
+              hostPort: 3002
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/tmp/hemmelig/upload/files
+              name: hemmelig-claim0
+            - mountPath: /home/node/hemmelig/database
+              name: hemmelig-claim1
+      hostname: hemmelig
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: hemmelig-claim0
+          persistentVolumeClaim:
+            claimName: hemmelig-claim0
+        - name: hemmelig-claim1
+          persistentVolumeClaim:
+            claimName: hemmelig-claim1
